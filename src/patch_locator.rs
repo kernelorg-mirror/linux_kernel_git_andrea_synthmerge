@@ -232,7 +232,7 @@ impl Hunk {
                 // whitespace context lines,
                 // finalize the current snippet and start a new one.
                 if pending_context.len() >= patch_context_lines {
-                    if pending_context.len() > hard_patch_context_lines * 2 {
+                    if pending_context.len() > hard_patch_context_lines.saturating_mul(2) {
                         return Err(anyhow::anyhow!(
                             "Unexpected number of pending context lines ({}) for patch_context_lines ({})",
                             pending_context.len(),
@@ -1048,6 +1048,12 @@ impl PatchLocator {
             assert!(conflict.local_end >= conflict.local_start);
 
             let hunks = self.diff_to_hunks(conflict.conflict_raw_patch.as_ref().unwrap(), false)?;
+            assert_eq!(hunks.len(), 1);
+
+            let hunks: Vec<Hunk> = hunks
+                .first()
+                .unwrap()
+                .split(code_context_lines, usize::MAX)?;
 
             let prev_local_end = if i > 0 {
                 conflicts_tmp[i - 1].local_end
