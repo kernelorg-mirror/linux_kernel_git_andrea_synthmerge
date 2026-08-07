@@ -732,7 +732,7 @@ impl Bench {
             }
         }
 
-        sorted_model_names.sort_by(|a, b| a.0.cmp(&b.0));
+        sorted_model_names.sort_by_key(|a| a.0);
         let ai_consensus_model = sorted_model_names
             .iter()
             .map(|(_, model)| model.as_str())
