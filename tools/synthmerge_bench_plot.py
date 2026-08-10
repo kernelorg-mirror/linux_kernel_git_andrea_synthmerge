@@ -14,6 +14,7 @@ models = [
     "AI Consensus: Gemini 3.1 Pro (low) + Claude Opus 4.6 (adaptive) + Gemini 3.5 Flash (none)",
     "AI Consensus: Gemini 3.1 Pro + Claude Opus 4.6 + Patchpal",
     "AI Consensus: Claude Opus 4.6 + Gemini 3.1 Pro + Patchpal",
+    "Claude Opus 5 (default adaptive)",
     "Gemini 3.6 Flash (medium default)",
     "Claude Opus 4.8 (default adaptive)",
     "Claude Opus 4.7 (default adaptive)",
