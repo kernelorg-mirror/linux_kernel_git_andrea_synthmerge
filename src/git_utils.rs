@@ -1123,6 +1123,9 @@ impl GitUtils {
         // Restore context lines before continuing
         self.restore_context_lines(context_lines);
 
+        // Reset retries
+        self.retries = 0;
+
         // Always delete unmerged files if any before continuing
         self.git_add_delete_unmerged()?;
 
