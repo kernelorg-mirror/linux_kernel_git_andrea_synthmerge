@@ -1132,15 +1132,20 @@ impl GitUtils {
         // Function to commit and continue operation
         if operation.command == "rebase" {
             let message_path = Path::new(&git_dir).join(Self::REBASE_MESSAGE_FILE);
-            if message_path.exists() {
-                let content = std::fs::read_to_string(&message_path)?;
-                let cleaned = content
-                    .lines()
-                    .filter(|line| !line.starts_with('#'))
-                    .collect::<Vec<_>>()
-                    .join("\n");
-                std::fs::write(&message_path, cleaned)?;
+            if !message_path.exists() {
+                log::warn!(
+                    "Rebase message file not found: {}",
+                    Self::REBASE_MESSAGE_FILE
+                );
+                return Ok(false);
             }
+            let content = std::fs::read_to_string(&message_path)?;
+            let cleaned = content
+                .lines()
+                .filter(|line| !line.starts_with('#'))
+                .collect::<Vec<_>>()
+                .join("\n");
+            std::fs::write(&message_path, cleaned)?;
 
             // Commit the changes
             println!("Committing changes");
