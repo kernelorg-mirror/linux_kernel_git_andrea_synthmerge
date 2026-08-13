@@ -51,6 +51,7 @@ fn import_cache(args: &Args) -> Result<bool> {
 #[tokio::main]
 async fn main() -> Result<()> {
     logger::log_init();
+    // clap std::process::exit(2) on error
     let args = Args::parse();
 
     // If import_cache is provided, import cache and exit
@@ -116,7 +117,7 @@ async fn main() -> Result<()> {
             if args.continue_op && git_utils.continue_operation(&context_lines)? {
                 continue;
             }
-            return Ok(());
+            break;
         }
 
         println!("Found {} conflicts to resolve", conflicts.len());
@@ -137,24 +138,17 @@ async fn main() -> Result<()> {
 
         let mut repeat = false;
         if args.vibe {
-            match git_utils.apply_vibe_resolution(
+            let no_conflicts_left = git_utils.apply_vibe_resolution(
                 &conflicts,
                 &resolved_conflicts,
                 &resolved_errors.retry_files,
-            ) {
-                Ok(no_conflicts_left) => {
-                    if no_conflicts_left {
-                        if args.continue_op {
-                            repeat = git_utils.continue_operation(&context_lines)?;
-                        }
-                    } else {
-                        repeat = true;
-                    }
+            )?;
+            if no_conflicts_left {
+                if args.continue_op {
+                    repeat = git_utils.continue_operation(&context_lines)?;
                 }
-                Err(e) => {
-                    eprintln!("Failed to apply vibe resolution: {}", e);
-                    std::process::exit(2);
-                }
+            } else {
+                repeat = true;
             }
         } else {
             git_utils.apply_resolved_conflicts(&resolved_conflicts)?;
