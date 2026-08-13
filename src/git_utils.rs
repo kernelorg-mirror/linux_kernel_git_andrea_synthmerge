@@ -159,12 +159,13 @@ impl GitUtils {
     /// Retry logic: decrement retries and adjust context lines based
     /// on resolution mode
     pub fn can_retry(&mut self) -> bool {
-        let enable_relocation = self.retries == 0;
         if self.retries >= self.max_retries {
             return false;
         }
 
         self.retries += 1;
+        let enable_relocation = self.retries == 1;
+
         let extra: u32 = if self.retries > self.max_retries / 2 {
             self.retries.try_into().unwrap()
         } else {
