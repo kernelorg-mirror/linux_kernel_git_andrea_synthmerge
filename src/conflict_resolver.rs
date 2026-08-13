@@ -86,6 +86,7 @@ pub struct ResolvedConflict {
     pub endpoint: usize,
     pub multi: Option<usize>,
     pub beam: Option<usize>,
+    pub no_change: bool,
 }
 
 pub struct ResolverErrors {
@@ -568,7 +569,8 @@ impl<'a> ConflictResolver<'a> {
                             continue;
                         }
 
-                        if self.reject_no_change && resolved_version == conflict.conflict_code {
+                        let no_change = resolved_version == conflict.conflict_code;
+                        if self.reject_no_change && no_change {
                             log::warn!("Skipping {} - no change detected", model);
                             record_error(&model, beam == 0 && multi == 0);
                             continue;
@@ -596,6 +598,7 @@ impl<'a> ConflictResolver<'a> {
                             endpoint,
                             beam: Some(beam),
                             multi: Some(multi),
+                            no_change,
                         });
                         no_solutions = false;
                     }

@@ -111,6 +111,13 @@ pub struct GitUtils {
     resolution_mode: ResolutionMode,
     pub(crate) retries: usize,
     max_retries: usize,
+    continue_op: bool,
+    assisted: bool,
+    resolved_files: HashSet<String>,
+    unresolved_files: HashSet<String>,
+    unresolved_clean_files: HashSet<String>,
+    unresolved_added_files: HashSet<String>,
+    unresolved_deleted_files: HashSet<String>,
 }
 
 impl GitUtils {
@@ -126,6 +133,7 @@ impl GitUtils {
         cache_overwrite: bool,
         resolution_mode: ResolutionMode,
         max_retries: usize,
+        continue_op: bool,
     ) -> Self {
         let git_root = Self::get_git_root_uncached().ok();
         let git_dir = Self::get_git_dir_uncached().ok();
@@ -145,6 +153,13 @@ impl GitUtils {
             resolution_mode,
             retries: 0,
             max_retries,
+            continue_op,
+            assisted: false,
+            resolved_files: HashSet::new(),
+            unresolved_files: HashSet::new(),
+            unresolved_clean_files: HashSet::new(),
+            unresolved_added_files: HashSet::new(),
+            unresolved_deleted_files: HashSet::new(),
         }
     }
 
@@ -889,9 +904,8 @@ impl GitUtils {
     }
 
     /// Apply resolved conflicts back to the repository
-    pub fn apply_resolved_conflicts(&self, conflicts: &[ResolvedConflict]) -> Result<()> {
+    pub fn apply_resolved_conflicts(&mut self, conflicts: &[ResolvedConflict]) -> Result<()> {
         let conflicts = Self::deduplicate_conflicts(conflicts);
-        let mut assisted = false;
 
         for conflict in conflicts.iter().rev() {
             println!(
@@ -958,13 +972,13 @@ impl GitUtils {
             fs::write(&path, lines.join("")).with_context(|| {
                 format!("Failed to write file: {}", conflict.conflict.file_path)
             })?;
-            assisted = true;
+            self.resolved_files
+                .insert(conflict.conflict.file_path.clone());
+            self.assisted = true;
         }
 
         // Add Assisted-by line to merge message
-        if assisted {
-            self.update_merge_message()?;
-        }
+        self.update_merge_message(false)?;
 
         Ok(())
     }
@@ -999,7 +1013,6 @@ impl GitUtils {
 
         let mut needs_retry = false;
         let mut recoverable = true;
-        let mut assisted = false;
 
         // Process each file
         for file_path in sorted_files {
@@ -1025,7 +1038,7 @@ impl GitUtils {
                 fs::write(&path, content.join(""))
                     .with_context(|| format!("Failed to write file: {}", file_path))?;
                 self.git_update_index(Some(file_path))?;
-                assisted = true;
+                self.assisted = true;
             } else {
                 needs_retry = true;
                 if !retry_files.contains(file_path) {
@@ -1035,9 +1048,7 @@ impl GitUtils {
         }
 
         // Add Assisted-by line to merge message
-        if assisted {
-            self.update_merge_message()?;
-        }
+        self.update_merge_message(false)?;
 
         if needs_retry {
             if recoverable && self.can_retry() {
@@ -1052,7 +1063,7 @@ impl GitUtils {
 
     /// Apply vibe resolution using conflict markers
     fn apply_vibe_resolution_to_file(
-        &self,
+        &mut self,
         sorted_conflicts: &[&Conflict],
         resolved_conflicts: &[ResolvedConflict],
     ) -> Result<Option<Vec<String>>> {
@@ -1061,9 +1072,9 @@ impl GitUtils {
 
         // Process conflicts in reverse order to maintain correct line numbers
         for conflict in sorted_conflicts.iter().rev() {
+            let file_path = &conflict.file_path;
             let resolved_conflict = resolved_conflicts.iter().find(|r| {
-                r.conflict.file_path == conflict.file_path
-                    && r.conflict.local_start == conflict.local_start
+                r.conflict.file_path == *file_path && r.conflict.local_start == conflict.local_start
             });
 
             if resolved_conflict.is_none() {
@@ -1071,16 +1082,17 @@ impl GitUtils {
                     CommitType::Clean => {
                         log::warn!(
                             "No resolved conflict found for Clean hunk: {}:{}->{}, skipping",
-                            conflict.file_path,
+                            file_path,
                             conflict.start_line,
                             conflict.local_start
                         );
+                        self.unresolved_clean_files.insert(file_path.to_string());
                         continue;
                     }
                     _ => {
                         log::error!(
                             "No resolved conflict found for: {}:{}->{}",
-                            conflict.file_path,
+                            file_path,
                             conflict.start_line,
                             conflict.local_start
                         );
@@ -1093,7 +1105,7 @@ impl GitUtils {
 
             println!(
                 "Found vibe resolution for: {}:{}->{}",
-                conflict.file_path, conflict.start_line, conflict.local_start
+                file_path, conflict.start_line, conflict.local_start
             );
 
             // Replace the entire conflict with the resolved version
@@ -1105,6 +1117,12 @@ impl GitUtils {
 
             // Replace the conflict
             lines.splice(conflict.local_start..conflict.local_end, resolved_lines);
+
+            if resolved_conflict.no_change {
+                self.unresolved_files.insert(file_path.to_string());
+            } else {
+                self.resolved_files.insert(file_path.to_string());
+            }
         }
 
         Ok(Some(lines))
@@ -1123,7 +1141,7 @@ impl GitUtils {
         // Restore context lines before continuing
         self.restore_context_lines(context_lines);
 
-        // Reset retries
+        // Reset git_utils
         self.retries = 0;
 
         // Always delete unmerged files if any before continuing
@@ -1263,6 +1281,12 @@ impl GitUtils {
             } else {
                 None
             };
+            let no_change = group[0].no_change;
+            // for_each or the assert won't run
+            group
+                .iter()
+                .skip(1)
+                .for_each(|c| assert_eq!(c.no_change, no_change));
             result.push(ResolvedConflict {
                 conflict: base_conflict.clone(),
                 resolved_version,
@@ -1285,6 +1309,7 @@ impl GitUtils {
                     .collect(),
                 beam: None,
                 multi: None,
+                no_change,
             });
         }
 
@@ -1436,7 +1461,7 @@ impl GitUtils {
 
     /// Delete unmerged files that have been deleted in one side and updated in the other
     /// Add unmerged files that have been added on one side and updated in theo ther
-    fn git_add_delete_unmerged(&self) -> Result<()> {
+    fn git_add_delete_unmerged(&mut self) -> Result<()> {
         // Get the current status in v2 format with null-terminated entries
         let status_output = self.git_status_porcelain_v2(None)?;
 
@@ -1481,16 +1506,22 @@ impl GitUtils {
                                     String::from_utf8_lossy(&rm_output.stderr)
                                 ));
                             }
+                            self.unresolved_deleted_files.insert(path.to_string());
                         } else if (c0 == Some('U') && c1 == Some('A'))
                             || (c0 == Some('A') && c1 == Some('U'))
                         {
                             let path = parts[10];
                             self.git_update_index(Some(path))?;
+                            self.unresolved_added_files.insert(path.to_string());
                         }
                     }
                 }
             }
         }
+
+        self.update_merge_message(true)?;
+        // Reset assisted
+        self.assisted = false;
 
         Ok(())
     }
@@ -1575,7 +1606,10 @@ impl GitUtils {
     }
 
     /// Update the git merge message to include Assisted-by line
-    fn update_merge_message(&self) -> Result<()> {
+    fn update_merge_message(&mut self, files_status: bool) -> Result<()> {
+        if !self.assisted {
+            return Ok(());
+        }
         let git_dir = self.git_dir.as_ref().unwrap();
 
         let merge_msg_path = if self.in_rebase {
@@ -1593,10 +1627,6 @@ impl GitUtils {
                 return Ok(());
             }
         };
-
-        if merge_msg_content.contains(Self::ASSISTED_BY_LINE) {
-            return Ok(());
-        }
 
         let mut lines: Vec<String> = merge_msg_content
             .split_inclusive('\n')
@@ -1621,35 +1651,71 @@ impl GitUtils {
             }
         }
 
+        let mut added_lines = vec!["\n".to_string()];
+
         let mut i = insert_pos + 1;
-        let mut prefix_newline = "\n";
         let regex = regex::Regex::new(r"^[A-Z][^\s]*-by:\s.*\n$").unwrap();
         while i > 0 {
             i -= 1;
             if regex.is_match(&lines[i]) {
-                prefix_newline = "";
+                added_lines.pop();
                 break;
             }
         }
 
-        // Insert the Assisted-by line after the last non-empty line
-        let assisted_line = format!("{}{}\n", prefix_newline, Self::ASSISTED_BY_LINE);
-        lines.insert(insert_pos + 1, assisted_line);
+        if !merge_msg_content.contains(Self::ASSISTED_BY_LINE) {
+            added_lines.push(format!("{}\n", Self::ASSISTED_BY_LINE));
+            println!("Added \"{}\"", Self::ASSISTED_BY_LINE);
+        }
 
-        let updated_content = lines.join("");
-        fs::write(&merge_msg_path, updated_content).with_context(|| {
-            format!(
-                "Failed to write updated merge message: {}",
-                merge_msg_path.display()
-            )
-        })?;
+        if files_status {
+            assert!(self.continue_op);
+            let file_lists = [
+                ("Resolved", &mut self.resolved_files),
+                ("Unresolved", &mut self.unresolved_files),
+                ("Unresolved clean", &mut self.unresolved_clean_files),
+                ("Unresolved added", &mut self.unresolved_added_files),
+                ("Unresolved deleted", &mut self.unresolved_deleted_files),
+            ];
 
-        println!("Added \"{}\"", Self::ASSISTED_BY_LINE);
+            assert!(file_lists.iter().any(|f| !f.1.is_empty()));
+            added_lines.push("\n".to_string());
+            added_lines.push("Synthmerge status:\n".to_string());
+            for (title, files) in file_lists {
+                added_lines.extend(Self::format_conflict_list(title, files));
+                files.drain();
+            }
+        }
+
+        if !added_lines.is_empty() {
+            lines.splice(insert_pos + 1..insert_pos + 1, added_lines);
+
+            let updated_content = lines.join("");
+            fs::write(&merge_msg_path, updated_content).with_context(|| {
+                format!(
+                    "Failed to write updated merge message: {}",
+                    merge_msg_path.display()
+                )
+            })?;
+        }
 
         // Check for cherry-pick without -x flag
         self.check_cherry_pick_x(&merge_msg_content)?;
 
         Ok(())
+    }
+
+    fn format_conflict_list(title: &str, files: &HashSet<String>) -> Vec<String> {
+        if files.is_empty() {
+            return Vec::new();
+        }
+        let mut sorted_files: Vec<_> = files.iter().cloned().collect();
+        sorted_files.sort();
+        let mut lines = vec![format!("\t{}:\n", title)];
+        for f in &sorted_files {
+            lines.push(format!("\t\t{}\n", f));
+        }
+        lines
     }
 
     /// Check if we are currently in a cherry-pick, merge, or rebase state

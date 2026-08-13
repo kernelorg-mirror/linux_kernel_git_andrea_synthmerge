@@ -505,6 +505,7 @@ impl Bench {
             args.cache_overwrite,
             ResolutionMode::Interactive,
             0,
+            false,
         );
 
         // Load existing checkpoint
