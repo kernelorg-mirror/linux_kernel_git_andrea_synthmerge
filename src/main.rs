@@ -97,15 +97,15 @@ async fn main() -> Result<()> {
         std::process::exit(1);
     }
 
-    let git_diff = if let Some(commit_hash) = git_utils.find_commit_hash()? {
-        log::info!("Extracting diff for commit {}", commit_hash);
-        git_utils.extract_diff(&commit_hash, args.max_context_size)?
-    } else {
-        None
-    };
-
     let mut prev_conflicts = Vec::new();
     loop {
+        let git_diff = if let Some(commit_hash) = git_utils.find_commit_hash()? {
+            log::info!("Extracting diff for commit {}", commit_hash);
+            git_utils.extract_diff(&commit_hash, args.max_context_size)?
+        } else {
+            None
+        };
+
         // Check if we're in a cherry-pick and extract commit if needed
         // Check if there are conflicts
         let conflicts = git_utils.find_conflicts(args.max_context_size, &prev_conflicts)?;
