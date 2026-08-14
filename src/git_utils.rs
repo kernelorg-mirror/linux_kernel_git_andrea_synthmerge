@@ -1459,6 +1459,25 @@ impl GitUtils {
         combined_names.join(", ")
     }
 
+    fn git_checkout(&self, commit_hash: &str, path: &str) -> Result<()> {
+        let output = GitCommand::new("git")
+            .args(["checkout", commit_hash, "--", path])
+            .output()
+            .context(format!(
+                "Failed to execute git checkout {} -- {}",
+                commit_hash, path
+            ))?;
+        if !output.status.success() {
+            return Err(anyhow::anyhow!(
+                "Git checkout {} -- {} failed: {}",
+                commit_hash,
+                path,
+                String::from_utf8_lossy(&output.stderr)
+            ));
+        }
+        Ok(())
+    }
+
     /// Delete unmerged files that have been deleted in one side and updated in the other
     /// Add unmerged files that have been added on one side and updated in theo ther
     fn git_add_delete_unmerged(&mut self) -> Result<()> {
@@ -1512,6 +1531,12 @@ impl GitUtils {
                         {
                             let path = parts[10];
                             self.git_update_index(Some(path))?;
+                            self.unresolved_added_files.insert(path.to_string());
+                        } else if c0 == Some('A') && c1 == Some('A') {
+                            let path = parts[10];
+
+                            // Checkout the file from the current branch if it already exists
+                            self.git_checkout("HEAD", path)?;
                             self.unresolved_added_files.insert(path.to_string());
                         }
                     }
