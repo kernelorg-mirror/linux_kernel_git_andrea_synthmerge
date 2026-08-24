@@ -967,6 +967,12 @@ impl PatchLocator {
                         );
                     }
 
+                    if current.commit_type.is_conflict() && next.commit_type.is_conflict() {
+                        current.start_line = current.start_line.min(next.start_line);
+                    } else if next.commit_type.is_conflict() {
+                        current.start_line = next.start_line;
+                    }
+
                     self.merge_conflict_code(current, next);
 
                     if current.commit_type.is_clean() && next.commit_type.is_conflict() {
