@@ -521,6 +521,14 @@ Model: Claude Sonnet 4.5 (default)
   Average tokens: 5735.29
   Average duration: 3.04 s
 
+Model: Qwen3.8-27B-UD-Q6_K_XL (gbnf)
+  Accuracy: 65.10% (735/1129)
+  Accuracy (aligned): 68.56% (774/1129)
+  Accuracy (stripped): 72.63% (820/1129)
+  Error Rate: 0.00% (0/1129)
+  Average tokens: 4577.64
+  Average duration: 7.64 s
+
 Model: Claude Sonnet 5 (default adaptive) # thinking adaptive
   Accuracy: 65.10% (735/1129)
   Accuracy (aligned): 68.82% (777/1129)
