@@ -434,6 +434,7 @@ impl PatchLocator {
     const MISPLACED_CONTEXT_LINES: usize = 4;
     const EXTEND_CONFLICT_ON_CLEAN_MERGE: bool = true;
     const RELOCATE_BOTH_LENGTH_FACTOR: usize = 100;
+    const EXTEND_IF_WITHIN_LINES: usize = 100;
 
     // https://github.com/rust-lang/rust-clippy/issues/1576
     #[allow(clippy::too_many_arguments)]
@@ -946,10 +947,22 @@ impl PatchLocator {
                     }
                 }
 
-                if same_hunk || current.new_local_end >= next.new_local_start {
+                let no_intermediate_clean_hunk = current.commit_type.is_conflict()
+                    && next.commit_type.is_conflict()
+                    && current
+                        .hunks
+                        .iter()
+                        .all(|h1| next.hunks.iter().all(|h2| h1.base_start != h2.base_start));
+
+                if same_hunk
+                    || current.new_local_end >= next.new_local_start
+                    || ((next.new_local_start - current.new_local_end)
+                        <= Self::EXTEND_IF_WITHIN_LINES
+                        && no_intermediate_clean_hunk)
+                {
                     repeat = true;
                     log::debug!(
-                        "Merging {:?} [{},{}) - {:?} [{},{}), same_hunk: {same_hunk}",
+                        "Merging {:?} [{},{}) - {:?} [{},{}), same_hunk: {same_hunk}, no_intermediate_clean_hunk: {no_intermediate_clean_hunk}",
                         current.commit_type,
                         current.new_local_start,
                         current.new_local_end,
