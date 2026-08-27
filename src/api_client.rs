@@ -134,7 +134,14 @@ impl ApiClient {
             reqwest::header::CONTENT_TYPE,
             reqwest::header::HeaderValue::from_static("application/json"),
         );
-        if let Some(api_key_file) = &*self.endpoint.api_key_file {
+        if let Some(gcp_token_provider) = &self.endpoint.gcp_token_provider {
+            let token = gcp_token_provider.get_token().await?;
+            headers.insert(
+                reqwest::header::AUTHORIZATION,
+                reqwest::header::HeaderValue::from_str(&format!("Bearer {}", token))
+                    .context("Invalid GCP token")?,
+            );
+        } else if let Some(api_key_file) = &*self.endpoint.api_key_file {
             // Only add the Authorization header if an API key file is specified
             let api_key = self.read_api_key(api_key_file).await?;
             headers.insert(

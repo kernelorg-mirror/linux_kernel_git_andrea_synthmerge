@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later OR AGPL-3.0-or-later
 // Copyright (C) 2025-2026  Red Hat, Inc.
 
+use crate::gcp_auth;
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -28,6 +29,9 @@ pub struct EndpointConfig {
     pub root_certificate_pem: Option<String>,
     pub api_key_file: Box<Option<String>>,
     pub x_api_key_file: Box<Option<String>>,
+    pub gcp_service_account_file: Box<Option<String>>,
+    #[serde(skip)]
+    pub gcp_token_provider: Option<std::sync::Arc<gcp_auth::GcpTokenProvider>>,
     pub context: Option<EndpointContext>,
     pub json: Option<EndpointJson>,
     pub headers: Option<EndpointHeaders>,
@@ -240,6 +244,8 @@ impl Config {
 
         Self::validate_primary(&mut config.endpoints);
 
+        Self::initialize_gcp_token_providers(&mut config.endpoints, path)?;
+
         log::debug!("{:?}", config);
 
         Ok(config)
@@ -249,6 +255,26 @@ impl Config {
         if !endpoints.iter().any(|e| e.primary) {
             endpoints.iter_mut().for_each(|e| e.primary = true);
         }
+    }
+
+    fn initialize_gcp_token_providers(endpoints: &mut [EndpointConfig], path: &Path) -> Result<()> {
+        for (i, endpoint) in endpoints.iter_mut().enumerate() {
+            if endpoint.api_key_file.as_deref().is_some()
+                && endpoint.gcp_service_account_file.as_deref().is_some()
+            {
+                return Err(anyhow::anyhow!(
+                    "Endpoint {} in config file {} has both api_key_file and gcp_service_account_file set",
+                    i,
+                    path.display()
+                ));
+            }
+            if let Some(gcp_service_account_file) = &*endpoint.gcp_service_account_file {
+                endpoint.gcp_token_provider = Some(std::sync::Arc::new(
+                    gcp_auth::GcpTokenProvider::from_file(gcp_service_account_file.clone()),
+                ));
+            }
+        }
+        Ok(())
     }
 
     fn trim_endpoint_whitespace(endpoints: &mut [EndpointConfig]) {

@@ -6,6 +6,7 @@ pub mod bench;
 pub mod bench_args;
 pub mod config;
 pub mod conflict_resolver;
+mod gcp_auth;
 pub mod git_utils;
 mod lmdb_cache;
 pub mod logger;
