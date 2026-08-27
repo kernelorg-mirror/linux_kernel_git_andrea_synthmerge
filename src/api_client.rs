@@ -781,7 +781,19 @@ impl ApiClient {
         );
 
         for _ in 0..self.endpoint.retries {
-            let headers = self.create_headers().await?;
+            let headers = match self.create_headers().await {
+                Ok(headers) => headers,
+                Err(e) => {
+                    log::warn!(
+                        "Failed to create headers for endpoint {}: {}",
+                        self.endpoint.name,
+                        e
+                    );
+                    self.apply_delay(&mut delay, max_delay, &e).await;
+                    last_error = Some(e);
+                    continue;
+                }
+            };
             let response = self
                 .client
                 .post(url.to_string())
