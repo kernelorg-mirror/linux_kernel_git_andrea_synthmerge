@@ -323,7 +323,7 @@ The following statistics were generated using the `synthmerge_bench` tool on a C
 
 This measurement used only new test data never exposed to the model during the fine tuning process.
 
-![Benchmark Results](https://gitlab.com/aarcange/synthmerge-assets/-/raw/main/synthmerge_bench-20260810.jpg)
+![Benchmark Results](https://gitlab.com/aarcange/synthmerge-assets/-/raw/main/synthmerge_bench-20260827.jpg)
 
 ### The Numbers
 
@@ -342,6 +342,14 @@ Model: AI Consensus: Claude Opus 4.6 + Gemini 3.1 Pro + Patchpal
   Error Rate: 0.00% (0/1129)
   Average tokens: 5838.40
 
+Model: Gemini 3.7 Flash (medium default) # reasoning_effort: medium
+  Accuracy: 71.21% (804/1129)
+  Accuracy (aligned): 75.20% (849/1129)
+  Accuracy (stripped): 78.57% (887/1129)
+  Error Rate: 0.00% (0/1129)
+  Average tokens: 6410.88
+  Average duration: 4.14 s
+
 Model: AI Consensus: Gemini 3.1 Pro (low) + Claude Opus 4.6 (adaptive) + Gemini 3.5 Flash (none)
   Accuracy: 70.77% (799/1129)
   Accuracy (aligned): 74.40% (840/1129)
@@ -356,6 +364,14 @@ Model: AI Consensus: Gemini 3.1 Pro + Claude Opus 4.6
   Error Rate: 0.00% (0/1129)
   Average tokens: 5907.26
 
+Model: gpt-5.5 (high)
+  Accuracy: 70.50% (796/1129)
+  Accuracy (aligned): 74.22% (838/1129)
+  Accuracy (stripped): 78.12% (882/1129)
+  Error Rate: 0.00% (0/1129)
+  Average tokens: 4817.62
+  Average duration: 9.60 s
+
 Model: Claude Opus 5 (default adaptive) # thinking adaptive
   Accuracy: 70.15% (792/1129)
   Accuracy (aligned): 74.14% (837/1129)
@@ -364,6 +380,14 @@ Model: Claude Opus 5 (default adaptive) # thinking adaptive
   Average tokens: 7384.59
   Average duration: 5.91 s
 
+Model: gpt-5.6-sol (high)
+  Accuracy: 69.71% (787/1129)
+  Accuracy (aligned): 73.43% (829/1129)
+  Accuracy (stripped): 77.15% (871/1129)
+  Error Rate: 0.00% (0/1129)
+  Average tokens: 4309.43
+  Average duration: 3.91 s
+
 Model: Gemini 3.6 Flash (medium default) # reasoning_effort: medium
   Accuracy: 69.35% (783/1129)
   Accuracy (aligned): 73.96% (835/1129)
@@ -371,6 +395,14 @@ Model: Gemini 3.6 Flash (medium default) # reasoning_effort: medium
   Error Rate: 0.00% (0/1129)
   Average tokens: 7537.06
   Average duration: 9.70 s
+
+Model: gpt-5.5 (medium)
+  Accuracy: 69.35% (783/1129)
+  Accuracy (aligned): 73.07% (825/1129)
+  Accuracy (stripped): 76.88% (868/1129)
+  Error Rate: 0.00% (0/1129)
+  Average tokens: 4469.82
+  Average duration: 5.64 s
 
 Model: Gemini 3.1 Pro (high default) # reasoning_effort: high
   Accuracy: 69.35% (783/1129)
@@ -396,6 +428,14 @@ Model: Claude Opus 4.6 (default)
   Average tokens: 5769.34
   Average duration: 3.39 s
 
+Model: gpt-5.6-sol (none)
+  Accuracy: 68.64% (775/1129)
+  Accuracy (aligned): 72.54% (819/1129)
+  Accuracy (stripped): 76.35% (862/1129)
+  Error Rate: 0.00% (0/1129)
+  Average tokens: 4192.87
+  Average duration: 2.12 s
+
 Model: Gemini 3.1 Pro (medium default) # reasoning_effort: medium
   Accuracy: 68.47% (773/1129)
   Accuracy (aligned): 72.10% (814/1129)
@@ -403,6 +443,22 @@ Model: Gemini 3.1 Pro (medium default) # reasoning_effort: medium
   Error Rate: 3.28% (37/1129)
   Average tokens: 6348.46
   Average duration: 9.95 s
+
+Model: gpt-5.6-sol (medium)
+  Accuracy: 68.20% (770/1129)
+  Accuracy (aligned): 71.83% (811/1129)
+  Accuracy (stripped): 75.64% (854/1129)
+  Error Rate: 0.18% (2/1129)
+  Average tokens: 4263.35
+  Average duration: 3.53 s
+
+Model: gpt-5.6-sol (low)
+  Accuracy: 67.94% (767/1129)
+  Accuracy (aligned): 71.57% (808/1129)
+  Accuracy (stripped): 75.82% (856/1129)
+  Error Rate: 0.00% (0/1129)
+  Average tokens: 4225.46
+  Average duration: 2.69 s
 
 Model: Gemini 3.5 Flash (high default) # reasoning_effort: high
   Accuracy: 67.76% (765/1129)
@@ -537,6 +593,14 @@ Model: Claude Sonnet 5 (default adaptive) # thinking adaptive
   Average tokens: 8071.57
   Average duration: 7.09 s
 
+Model: gpt-5.6-terra (medium)
+  Accuracy: 64.66% (730/1129)
+  Accuracy (aligned): 68.20% (770/1129)
+  Accuracy (stripped): 71.83% (811/1129)
+  Error Rate: 0.00% (0/1129)
+  Average tokens: 4248.54
+  Average duration: 2.34 s
+
 # temperature: 0.15 top_k: 20 top_p: 0.8 min_p: 0.00
 # llama.cpp vulkan enable_thinking: false
 Model: Qwen3.5-27B-UD-Q6_K_XL (gbnf)
@@ -604,6 +668,14 @@ Model: Claude Sonnet 4.6 (default)
   Error Rate: 0.00% (0/1129)
   Average tokens: 5768.64
   Average duration: 3.57 s
+
+Model: gpt-5.6-luna (medium)
+  Accuracy: 58.90% (665/1129)
+  Accuracy (aligned): 62.80% (709/1129)
+  Accuracy (stripped): 66.25% (748/1129)
+  Error Rate: 0.53% (6/1129)
+  Average tokens: 4355.95
+  Average duration: 3.34 s
 
 Model: Claude Opus 4.8 (default)
   Accuracy: 58.90% (665/1129)
