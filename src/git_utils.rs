@@ -113,6 +113,7 @@ pub struct GitUtils {
     max_retries: usize,
     continue_op: bool,
     assisted: bool,
+    assisted_conflicts: Vec<ResolvedConflict>,
     resolved_files: HashSet<String>,
     unresolved_files: HashSet<String>,
     unresolved_clean_files: HashSet<String>,
@@ -155,6 +156,7 @@ impl GitUtils {
             max_retries,
             continue_op,
             assisted: false,
+            assisted_conflicts: Vec::new(),
             resolved_files: HashSet::new(),
             unresolved_files: HashSet::new(),
             unresolved_clean_files: HashSet::new(),
@@ -977,8 +979,7 @@ impl GitUtils {
             self.assisted = true;
         }
 
-        // Add Assisted-by line to merge message
-        self.update_merge_message(false)?;
+        self.update_merge_message(false, false)?;
 
         Ok(())
     }
@@ -1047,15 +1048,15 @@ impl GitUtils {
             }
         }
 
-        // Add Assisted-by line to merge message
-        self.update_merge_message(false)?;
-
         if needs_retry {
             if recoverable && self.can_retry() {
                 return Ok(false);
             } else {
+                self.update_merge_message(false, false)?;
                 return Err(anyhow::anyhow!("Incomplete conflict resolution"));
             }
+        } else {
+            self.update_merge_message(false, true)?;
         }
 
         Ok(true)
@@ -1122,6 +1123,11 @@ impl GitUtils {
                 self.unresolved_files.insert(file_path.to_string());
             } else {
                 self.resolved_files.insert(file_path.to_string());
+            }
+
+            assert!(!resolved_conflict.deduplicated_conflicts.is_empty());
+            for dedup in &resolved_conflict.deduplicated_conflicts {
+                self.assisted_conflicts.push(dedup.clone());
             }
         }
 
@@ -1544,9 +1550,10 @@ impl GitUtils {
             }
         }
 
-        self.update_merge_message(true)?;
+        self.update_merge_message(true, false)?;
         // Reset assisted
         self.assisted = false;
+        self.assisted_conflicts.clear();
 
         Ok(())
     }
@@ -1630,8 +1637,29 @@ impl GitUtils {
         Ok(())
     }
 
+    fn assisted_by_line(&mut self, show_models: bool) -> String {
+        if show_models && !self.assisted_conflicts.is_empty() {
+            self.assisted_conflicts.sort_by(|a, b| {
+                a.endpoint
+                    .cmp(&b.endpoint)
+                    .then_with(|| a.model.cmp(&b.model))
+            });
+            self.assisted_conflicts
+                .dedup_by(|a, b| a.endpoint == b.endpoint && a.model == b.model);
+            let models_str = Self::combine_model_names(
+                &self
+                    .assisted_conflicts
+                    .iter()
+                    .collect::<Vec<&ResolvedConflict>>(),
+            );
+            format!("{} [{}]", Self::ASSISTED_BY_LINE, models_str)
+        } else {
+            Self::ASSISTED_BY_LINE.to_string()
+        }
+    }
+
     /// Update the git merge message to include Assisted-by line
-    fn update_merge_message(&mut self, files_status: bool) -> Result<()> {
+    fn update_merge_message(&mut self, files_status: bool, show_models: bool) -> Result<()> {
         if !self.assisted {
             return Ok(());
         }
@@ -1689,8 +1717,9 @@ impl GitUtils {
         }
 
         if !merge_msg_content.contains(Self::ASSISTED_BY_LINE) {
-            added_lines.push(format!("{}\n", Self::ASSISTED_BY_LINE));
-            println!("Added \"{}\"", Self::ASSISTED_BY_LINE);
+            let assisted_by_line = self.assisted_by_line(show_models);
+            added_lines.push(format!("{}\n", assisted_by_line));
+            println!("Added \"{}\"", assisted_by_line);
         }
 
         if files_status {
