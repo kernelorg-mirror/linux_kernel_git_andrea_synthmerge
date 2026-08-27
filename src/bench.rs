@@ -241,10 +241,12 @@ impl Bench {
                         .push(logprob);
                 }
             }
-            model_durations
-                .entry(model.clone())
-                .or_insert_with(Vec::new)
-                .push(result.duration);
+            if result.duration.is_normal() {
+                model_durations
+                    .entry(model.clone())
+                    .or_insert_with(Vec::new)
+                    .push(result.duration);
+            }
             if result.error {
                 *model_errors.entry(model.clone()).or_insert(0) += 1;
             }
