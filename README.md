@@ -319,7 +319,7 @@ The following statistics were generated using the `synthmerge_bench` tool on a C
 
 **Accuracy (aligned)** checks equality of whitespace patterns up until the first non-whitespace character, ignoring differences in lines without non-whitespace characters and whitespace variations after the first non-whitespace character (i.e. Python equivalence).
 
-**Accuracy (stripped)** compresses all whitespaces and newlines into a single space (i.e. C/C++/Rust/JavaScript equivalence).
+**Accuracy (stripped)** deletes all whitespaces and newlines (i.e. C/C++/Rust/JavaScript equivalence).
 
 This measurement used only new test data never exposed to the model during the fine tuning process.
 
