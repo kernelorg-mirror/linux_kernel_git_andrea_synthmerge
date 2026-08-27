@@ -62,6 +62,19 @@ Instead of relying on a single model, `synthmerge` runs a **parallel inference e
   - Custom root certificates can be added to the endpoint configuration
   - Wait time between requests can be specified per endpoint
 
+- **Authentication Flexibility**  
+  Supports multiple authentication methods for AI endpoints:
+  - Static API keys via `api_key_file` (Bearer token) or `x_api_key_file` (X-API-Key header)
+  - Google Cloud Platform service account authentication via `gcp_service_account_file` (automatically generates and caches OAuth2 access tokens)
+  - Custom HTTP headers via `headers` configuration for additional authentication or routing requirements
+
+- **Response Caching**  
+  Built-in LMDB cache for API responses to avoid redundant requests:
+  - Disable caching with `--no-cache` flag
+  - Change the cache location with `--cache <path>` parameter
+  - Overwrite mode to force new requests with `--cache-overwrite`
+  - Import cache entries from another cache database with `--import-cache <path>`
+
 - **Benchmark**  
   Built-in benchmarking tool (`synthmerge_bench`) for evaluating model accuracy on conflict resolution tasks
 
@@ -76,6 +89,9 @@ Instead of relying on a single model, `synthmerge` runs a **parallel inference e
 
 - **Marker Mode**  
   In vibe mode, synthmerge can detect cherry-picks requiring AI resolution, edit code beyond the original conflict markers and relocate conflicts to new positions in the file. To opt-out and strictly resolve conflicts within the diff3 conflict markers (matching non-vibe behavior), use the `--with-markers` option.
+
+- **Conflict Relocation**  
+  In vibe mode without `--with-markers`, synthmerge can relocate conflicts to their correct positions in the file when the original markers are misplaced.
 
 ---
 
@@ -129,6 +145,15 @@ synthmerge --vibe
 # For automatic resolution, git index update and continuing the operation
 git checkout -f v6.12 && git cherry-pick -x -m 1 v6.18-rc5..v6.18-rc6~2^2 || synthmerge --vibe --continue
 git rebase -i v6.18-rc5 v6.18-rc6~2^2 --onto v6.12 || synthmerge --vibe --continue
+
+# Disable caching for a run
+synthmerge --no-cache
+
+# Import cache from src to dst
+synthmerge --import-cache /path/to/src --cache /path/to/dst
+
+# Overwrite cache entries (force new API requests)
+synthmerge --cache-overwrite
 ```
 
 ---

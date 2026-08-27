@@ -1,5 +1,15 @@
 endpoints:
 
+  - name: "Gemini 3.7 Flash"
+    url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
+    type: "openai"
+    api_key_file: "~/.keys/gemini.api-key"
+    primary: true
+    json:
+      model: "gemini-3.7-flash"
+      #reasoning_effort: "high"
+    #use_backticks: false
+
   - name: "Gemini 3.1 Pro"
     url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
     type: "openai"
@@ -7,61 +17,85 @@ endpoints:
     primary: true
     json:
       model: "gemini-3.1-pro-preview"
-      reasoning_effort: "low"
+      reasoning_effort: "medium"
 
-  - name: "Claude Opus 4.6"
+  - name: "gpt-5.6-sol"
+    url: "https://api.openai.com/v1/chat/completions"
+    type: "openai"
+    api_key_file: "~/.keys/openai.api-key"
+    primary: true
+    json:
+      model: "gpt-5.6-sol"
+    variants:
+      - name: "high"
+        json:
+          reasoning_effort: "high"
+
+  - name: "gpt-5.5"
+    url: "https://api.openai.com/v1/chat/completions"
+    type: "openai"
+    api_key_file: "~/.keys/openai.api-key"
+    json:
+      model: "gpt-5.5"
+    variants:
+      - name: "high"
+        json:
+          reasoning_effort: "high"
+
+  - name: "Claude Opus 5"
     url: "https://api.anthropic.com/v1/messages"
     type: "anthropic"
     x_api_key_file: "~/.keys/anthropic.api-key"
     primary: true
     json:
-      max_tokens: 20000
-      model: "claude-opus-4-6"
-      temperature: 0
+      max_tokens: 128000
+      model: "claude-opus-5"
+      thinking:
+        type: "adaptive"
     headers:
       anthropic-version: "2023-06-01"
 
-  - name: "Vertex Claude Opus 4.6"
-    url: "https://aiplatform.googleapis.com/v1/projects/<project_id>/locations/global/publishers/anthropic/models/claude-opus-4-6@default:streamRawPredict"
+  - name: "Vertex Claude Opus 5"
+    url: "https://aiplatform.googleapis.com/v1/projects/<project_id>/locations/global/publishers/anthropic/models/claude-opus-5@default:streamRawPredict" # replace <project_id>
+    gcp_service_account_file: "~/.keys/gcp_service_account.json"
     type: "anthropic"
+
     # gcloud auth print-access-token >~/.keys/vertex-ai.api-key
-    api_key_file: "~/.keys/vertex-ai.api-key"
+    #api_key_file: "~/.keys/vertex-ai.api-key"
+
     max_delay: 10000
     json:
       anthropic_version: "vertex-2023-10-16"
-      max_tokens: 20000
-      temperature: 0
+      max_tokens: 128000
+      thinking:
+        type: "adaptive"
 
-  - name: "Gemini 3.5 Flash"
-    url: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
-    type: "openai"
-    api_key_file: "~/.keys/gemini.api-key"
-    json:
-      model: "gemini-3.5-flash"
-      reasoning_effort: "none"
-    #use_backticks: false
-
-  - name: "Claude Sonnet 4.5"
+  - name: "Claude Sonnet 5"
     url: "https://api.anthropic.com/v1/messages"
     type: "anthropic"
     x_api_key_file: "~/.keys/anthropic.api-key"
     json:
-      max_tokens: 20000
-      model: "claude-sonnet-4-5"
-      temperature: 0
+      model: "claude-sonnet-5"
+      max_tokens: 128000
+      thinking:
+        type: "adaptive"
     headers:
       anthropic-version: "2023-06-01"
 
-  - name: "Vertex Claude Sonnet 4.5"
-    url: "https://aiplatform.googleapis.com/v1/projects/<project_id>/locations/global/publishers/anthropic/models/claude-sonnet-4-5@20250929:streamRawPredict"
+  - name: "Vertex Claude Sonnet 5"
+    url: "https://aiplatform.googleapis.com/v1/projects/<project_id>/locations/global/publishers/anthropic/models/claude-sonnet-5@20250929:streamRawPredict" # replace <project_id>
+    gcp_service_account_file: "~/.keys/gcp_service_account.json"
     type: "anthropic"
+
     # gcloud auth print-access-token >~/.keys/vertex-ai.api-key
-    api_key_file: "~/.keys/vertex-ai.api-key"
+    #api_key_file: "~/.keys/vertex-ai.api-key"
+
     max_delay: 10000
     json:
       anthropic_version: "vertex-2023-10-16"
-      max_tokens: 20000
-      temperature: 0
+      max_tokens: 128000
+      thinking:
+        type: "adaptive"
 
   - name: "Vertex Gateway Claude Sonnet 4.0"
     url: "https://host/path"
