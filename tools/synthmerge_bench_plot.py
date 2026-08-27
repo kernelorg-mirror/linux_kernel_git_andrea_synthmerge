@@ -100,9 +100,9 @@ def get_data(model_list):
     return data
 
 
-# 2. Preprocessing: Sort by Accuracy (Stripped) descending
+# 2. Preprocessing: Sort by Accuracy then Accuracy Aligned then Accuracy Stripped descending
 data = get_data(models)
-data.sort(key=lambda x: x[1], reverse=True)
+data.sort(key=lambda x: (x[1], x[2], x[3]), reverse=True)
 
 # Extract lists for plotting
 models = [d[0] for d in data]
