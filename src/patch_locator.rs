@@ -1145,6 +1145,9 @@ impl PatchLocator {
                             &tail_context,
                             hunk.get_conflict_base()?
                                 .len()
+                                .min(hunk.get_conflict_remote()?.len()),
+                            hunk.get_conflict_base()?
+                                .len()
                                 .max(hunk.get_conflict_remote()?.len()),
                         )?;
 
@@ -1440,9 +1443,10 @@ impl PatchLocator {
         (prev_local_end, next_local_start): (usize, usize),
         head_context: &[String],
         tail_context: &[String],
-        expected_lines: usize,
+        expected_lines_min: usize,
+        expected_lines_max: usize,
     ) -> Result<bool> {
-        if expected_lines == 0 {
+        if expected_lines_max == 0 {
             return Err(anyhow::anyhow!(
                 "Relocation failed: expected_lines is zero for conflict in {} at [{},{})",
                 conflict.file_path,
@@ -1504,8 +1508,10 @@ impl PatchLocator {
                     let head_idx = prev_local_end + head_context_len + i;
                     let tail_idx = prev_local_end + j;
                     if head_idx <= tail_idx
-                        && tail_idx - head_idx <= expected_lines * Self::RELOCATE_BOTH_LENGTH_FACTOR
-                        && tail_idx - head_idx >= expected_lines / Self::RELOCATE_BOTH_LENGTH_FACTOR
+                        && tail_idx - head_idx
+                            <= expected_lines_max * Self::RELOCATE_BOTH_LENGTH_FACTOR
+                        && tail_idx - head_idx
+                            >= expected_lines_min / Self::RELOCATE_BOTH_LENGTH_FACTOR
                     {
                         let sum = hd + td;
                         if sum < min_sum {
