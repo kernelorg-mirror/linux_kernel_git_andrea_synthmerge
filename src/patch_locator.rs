@@ -939,30 +939,27 @@ impl PatchLocator {
 
             let mut repeat = false;
             for next in &mut *conflicts {
-                let mut same_hunk = false;
-                for hunk in &next.hunks {
-                    if current.hunks.contains(hunk) {
-                        same_hunk = true;
-                        break;
-                    }
-                }
+                let same_hunk = || next.hunks.iter().any(|hunk| current.hunks.contains(hunk));
 
-                let no_intermediate_clean_hunk = current.commit_type.is_conflict()
-                    && next.commit_type.is_conflict()
-                    && current
-                        .hunks
-                        .iter()
-                        .all(|h1| next.hunks.iter().all(|h2| h1.base_start != h2.base_start));
+                let within_lines_and_no_intermediate_clean_hunk = || {
+                    (next.new_local_start >= current.new_local_end
+                        && (next.new_local_start - current.new_local_end)
+                            <= Self::EXTEND_IF_WITHIN_LINES)
+                        && current.commit_type.is_conflict()
+                        && next.commit_type.is_conflict()
+                        && current
+                            .hunks
+                            .iter()
+                            .all(|h1| next.hunks.iter().all(|h2| h1.base_start != h2.base_start))
+                };
 
-                if same_hunk
-                    || current.new_local_end >= next.new_local_start
-                    || ((next.new_local_start - current.new_local_end)
-                        <= Self::EXTEND_IF_WITHIN_LINES
-                        && no_intermediate_clean_hunk)
+                if current.new_local_end >= next.new_local_start
+                    || same_hunk()
+                    || within_lines_and_no_intermediate_clean_hunk()
                 {
                     repeat = true;
                     log::debug!(
-                        "Merging {:?} [{},{}) - {:?} [{},{}), same_hunk: {same_hunk}, no_intermediate_clean_hunk: {no_intermediate_clean_hunk}",
+                        "Merging {:?} [{},{}) - {:?} [{},{})",
                         current.commit_type,
                         current.new_local_start,
                         current.new_local_end,
