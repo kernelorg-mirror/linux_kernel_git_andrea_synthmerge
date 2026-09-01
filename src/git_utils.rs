@@ -1381,14 +1381,14 @@ impl GitUtils {
 
         // Build the final ordered result
         let mut ordered_result = Vec::new();
-        for (resolved_version, local_start, file_path, _, _, _) in unique_conflicts {
+        for (resolved_version, file_path, local_start, _, _, _) in unique_conflicts {
             let pos = result
                 .iter()
                 .position(|r| {
                     (
                         &r.resolved_version,
-                        r.conflict.local_start,
                         r.conflict.file_path.as_str(),
+                        r.conflict.local_start,
                     ) == (&resolved_version, file_path, local_start)
                 })
                 .unwrap();
