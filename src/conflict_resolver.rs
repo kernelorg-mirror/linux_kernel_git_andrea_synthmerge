@@ -517,7 +517,7 @@ impl<'a> ConflictResolver<'a> {
                             // if conflict.head_context.trim().is_empty() {
                             //     break;
                             // }
-                            resolved_version = format!("{}\n", resolved_string);
+                            resolved_version = format!("{}\n", resolved_version);
                         }
                         if !found_context {
                             log::warn!("Skipping {} - doesn't end with tail context", model);
