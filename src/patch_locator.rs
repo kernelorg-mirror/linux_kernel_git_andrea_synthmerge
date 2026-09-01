@@ -1656,8 +1656,10 @@ impl PatchLocator {
         };
         let offset = range.start + offset;
         if reverse {
-            self.update_conflict_code(conflict, offset, conflict.local_end);
-        } else {
+            if offset < conflict.local_start {
+                self.update_conflict_code(conflict, offset, conflict.local_end);
+            }
+        } else if offset > conflict.local_end {
             self.update_conflict_code(conflict, conflict.local_start, offset);
         }
         Ok(true)
