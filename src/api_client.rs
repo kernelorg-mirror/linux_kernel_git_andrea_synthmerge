@@ -161,8 +161,12 @@ impl ApiClient {
         if let Some(endpoint_headers) = &self.endpoint.headers {
             for (key, value) in &endpoint_headers.headers {
                 headers.insert(
-                    reqwest::header::HeaderName::from_bytes(key.as_bytes()).unwrap(),
-                    reqwest::header::HeaderValue::from_str(value.as_str().unwrap()).unwrap(),
+                    reqwest::header::HeaderName::from_bytes(key.as_bytes())
+                        .with_context(|| format!("Invalid header name: {}", key))?,
+                    reqwest::header::HeaderValue::from_str(value.as_str().ok_or_else(|| {
+                        anyhow::anyhow!("Header '{}' value must be a string", key)
+                    })?)
+                    .with_context(|| format!("Invalid header value for: {}", key))?,
                 );
             }
         }
