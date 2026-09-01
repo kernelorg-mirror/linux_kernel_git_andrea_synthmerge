@@ -1710,8 +1710,11 @@ impl GitUtils {
         let regex = regex::Regex::new(r"^[A-Z][^\s]*-by:\s.*\n$").unwrap();
         while i > 0 {
             i -= 1;
+            let line = &lines[i];
             if regex.is_match(&lines[i]) {
                 added_lines.pop();
+                break;
+            } else if !line.trim().is_empty() {
                 break;
             }
         }
