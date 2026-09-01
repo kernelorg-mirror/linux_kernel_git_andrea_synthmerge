@@ -396,17 +396,14 @@ impl Hunk {
     fn __extract_snippet(&self, base: bool, all: bool) -> Result<String> {
         let (selector_char, skip_char) = if base { ('-', '+') } else { ('+', '-') };
         let mut lines = Vec::new();
-        let mut pending_whitespace: Vec<String> = Vec::new();
 
         for line in &self.body {
             if let Some(stripped) = line.strip_prefix(' ') {
                 lines.push(stripped.to_string());
             } else if let Some(stripped) = line.strip_prefix(selector_char) {
-                lines.append(&mut pending_whitespace);
                 lines.push(stripped.to_string());
             } else if all {
                 if let Some(stripped) = line.strip_prefix(skip_char) {
-                    lines.append(&mut pending_whitespace);
                     lines.push(stripped.to_string());
                 } else {
                     return Err(anyhow::anyhow!(
@@ -414,9 +411,7 @@ impl Hunk {
                         line
                     ));
                 }
-            } else if line.starts_with(skip_char) {
-                lines.append(&mut pending_whitespace);
-            } else {
+            } else if !line.starts_with(skip_char) {
                 return Err(anyhow::anyhow!(
                     "Invalid hunk body line: '{}'. All body lines must start with ' ', '-', or '+'.",
                     line
