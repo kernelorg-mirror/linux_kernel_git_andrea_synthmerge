@@ -594,14 +594,7 @@ impl ApiClient {
         chat.push(Some(system_message));
         chat.push(Some(user_message));
 
-        log::debug!(
-            "{}",
-            chat.iter()
-                .enumerate()
-                .next()
-                .map(|(_, s)| format!("Chat[{}]:\n{}", 0, s.as_ref().unwrap()))
-                .unwrap_or_default()
-        );
+        log::debug!("Chat[0]:\n{}", chat[0].as_ref().unwrap_or(&String::new()));
         log::info!(
             "{}",
             chat.iter()
