@@ -181,11 +181,7 @@ impl<'a> ConflictResolver<'a> {
                     {
                         resolved_conflicts.push(prev_conflict.clone());
                         skip_ai_resolution = true;
-                        break;
                     }
-                }
-                if skip_ai_resolution {
-                    break;
                 }
             }
             if skip_ai_resolution {
