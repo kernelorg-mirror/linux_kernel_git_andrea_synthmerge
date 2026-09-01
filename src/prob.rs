@@ -141,7 +141,8 @@ fn perplexity_search(
         for top_logprob in top_logprobs {
             let top_text = top_logprob.get("token").and_then(|t| t.as_str())?;
             if top_text != text {
-                if !top_text.chars().last().is_some_and(char::is_whitespace) && !text.is_empty() {
+                if !top_text.chars().last().is_some_and(char::is_whitespace) && !top_text.is_empty()
+                {
                     concatenated_tokens.push_str(top_text);
                     perplexity.push(concatenated_tokens);
                 }
