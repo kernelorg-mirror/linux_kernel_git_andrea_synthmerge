@@ -527,12 +527,12 @@ impl PatchLocator {
                 base_start = caps[1].parse()?;
                 base_count = match caps.get(2) {
                     Some(m) => m.as_str().strip_prefix(',').unwrap_or(m.as_str()).parse()?,
-                    None => 0,
+                    None => 1,
                 };
                 remote_start = caps[3].parse()?;
                 remote_count = match caps.get(4) {
                     Some(m) => m.as_str().strip_prefix(',').unwrap_or(m.as_str()).parse()?,
-                    None => 0,
+                    None => 1,
                 };
 
                 // Capture the header text after the @@ ... @@
