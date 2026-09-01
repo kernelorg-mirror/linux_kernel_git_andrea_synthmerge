@@ -1705,6 +1705,7 @@ impl GitUtils {
         }
 
         let mut added_lines = vec!["\n".to_string()];
+        let no_added_lines = added_lines.clone();
 
         let mut i = insert_pos + 1;
         let regex = regex::Regex::new(r"^[A-Z][^\s]*-by:\s.*\n$").unwrap();
@@ -1744,7 +1745,7 @@ impl GitUtils {
             }
         }
 
-        if !added_lines.is_empty() {
+        if !added_lines.is_empty() && added_lines != no_added_lines {
             lines.splice(insert_pos + 1..insert_pos + 1, added_lines);
 
             let updated_content = lines.join("");
