@@ -52,11 +52,17 @@ pub struct Hunk {
 
 impl std::fmt::Display for Hunk {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "@@ -{},{} +{},{} @@{}",
-            self.base_start, self.base_len, self.remote_start, self.remote_len, self.header
-        )?;
+        let base = if self.base_len == 1 {
+            format!("-{}", self.base_start)
+        } else {
+            format!("-{},{}", self.base_start, self.base_len)
+        };
+        let remote = if self.remote_len == 1 {
+            format!("+{}", self.remote_start)
+        } else {
+            format!("+{},{}", self.remote_start, self.remote_len)
+        };
+        write!(f, "@@ {} {} @@{}", base, remote, self.header)?;
         for line in &self.body {
             write!(f, "{}", line)?;
         }
