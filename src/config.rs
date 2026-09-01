@@ -177,7 +177,7 @@ pub struct EndpointHeaders {
 }
 
 impl Config {
-    const FORBIDDEN_CHARS: &str = "()|,#$";
+    const FORBIDDEN_CHARS: &str = "()|,#$[]";
 
     pub fn load(path: &Path) -> Result<Self> {
         let contents = fs::read_to_string(path)
