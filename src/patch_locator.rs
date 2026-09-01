@@ -71,9 +71,19 @@ impl Hunk {
     fn get_ranges(&self) -> (usize, usize, usize, usize) {
         let head = self.get_head_context().len();
         let tail = self.get_tail_context().len();
-        let hunk_base_start = self.base_start - 1 + head;
+        let hunk_base_start = if self.base_len == 0 {
+            assert_eq!(head, 0);
+            self.base_start
+        } else {
+            self.base_start - 1 + head
+        };
         let hunk_base_end = hunk_base_start + self.base_len - head - tail;
-        let hunk_remote_start = self.remote_start - 1 + head;
+        let hunk_remote_start = if self.remote_len == 0 {
+            assert_eq!(head, 0);
+            self.remote_start
+        } else {
+            self.remote_start - 1 + head
+        };
         let hunk_remote_end = hunk_remote_start + self.remote_len - head - tail;
         (
             hunk_base_start,
@@ -793,7 +803,12 @@ impl PatchLocator {
     }
 
     fn convert_clean_hunk_offsets(&self, hunk: &mut Hunk, conflicts: &[Conflict]) {
-        let ml_line = hunk.remote_start.saturating_sub(1) + hunk.get_head_context().len();
+        let ml_line = if hunk.remote_len == 0 {
+            assert_eq!(hunk.get_head_context().len(), 0);
+            hunk.remote_start
+        } else {
+            hunk.remote_start - 1 + hunk.get_head_context().len()
+        };
         let mut local_line = 0;
         let mut base_line = ml_line;
         let mut remote_line = ml_line;
